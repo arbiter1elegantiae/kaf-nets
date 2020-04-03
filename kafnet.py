@@ -22,6 +22,15 @@ def kafActivation(x, a, d, k_bwidth):
     return tf.reduce_sum(x, -1)
 
 
+def kernelMatrix(d, k_bwidth):
+    
+    """ d is supposed to be a one dimensional (n, ) tensor 
+        return the kernel matrix K \in R^D*D where K_ij = ker(d_i, d_j) """
+
+    d = tf.expand_dims(d, -1)
+    return tf.exp(- k_bwidth * tf.square(d - tf.transpose(d)))
+
+
 
 from tensorflow.keras.layers import Layer
 
@@ -29,14 +38,15 @@ class Kaf(Layer):
 
     """ Kernel Activation Function implemented as a keras layer to allow parameters learning 
     
-        It takes as input D which is supposed to be the size of the dictionary
-        and the label conv to indicate if the activation comes from a convolutional layer
-        
+        It takes as input 'D' which is supposed to be the size of the dictionary
+        and the label 'conv' to indicate if the activation comes from a convolutional layer.
         In particular, there are two supported activations only:
         - A batch of flattened units i.e. of shape = (b, x)
         - A batch of 2DConvolutions i.e. of shape = (b, x, y, f) where f is supposed to be the channels size
-        
         If the shape does not match with any of the latter, an error is thrown 
+
+        Moreover, another parameter 'ridge' \in {tanh, elu} if not None specifies how the mixing coefficients
+        need to be initialized in order to approximate the resulting Kaf to either a tanh or elu activation function
         
         References
         ----------
@@ -47,13 +57,14 @@ class Kaf(Layer):
         Learning Neuron Non-Linearities with Kernel-Based Deep Neural Networks. 
         arXiv preprint arXiv:1807.06302."""
 
-    def __init__(self, D, conv=False, **kwargs):
+    def __init__(self, D, conv=False, ridge=None, **kwargs):
 
         super(Kaf, self).__init__()
         
         # Init constants
         self.D = D
         self.conv = conv
+        self.ridge = ridge
         
         step, dict = dictionaryGen(D)
         self.d = tf.stack(dict)
@@ -69,10 +80,35 @@ class Kaf(Layer):
             try:
                 input_shape.assert_has_rank(4)
             except ValueError:
-                raise ValueError("The input shape for Kaf must be either a dense batch (b,x) \n or a gridlike batch (b, x, y, f)")
+                raise ValueError("The input shape for Kaf must be either a dense batch (b, x) \n or a gridlike batch (b, x, y, f)")
 
         # Init mix coefficients
-        self.a = self.add_weight(shape=(1, input_shape[-1], self.D),   
+        if self.ridge is not None:
+            
+            eps = 1e-06 # stick to the paper's design choice
+            
+            if self.ridge == 'tanh':
+                t = tf.keras.activations.tanh(self.d)
+                
+
+            elif self.ridge == 'elu':
+                t = tf.keras.activations.elu(self.d)
+
+            else:
+                raise ValueError("The Kaf layer supports approximation only for 'tanh' and 'elu'")
+
+            K = kernelMatrix(self.d, self.k_bandw)
+            
+            x = tf.reshape(np.linalg.solve(K + eps*tf.eye(self.D), t), shape=(1, 1, -1)) # solve ridge regression and get 'a' coeffs
+            a_init = x * tf.ones(shape=(1, input_shape[-1], self.D)) # reshape x
+            init = tf.constant_initializer(a_init.numpy()) # create an initializer from 'x'
+           
+            self.a = self.add_weight(shape=(1, input_shape[-1], self.D),
+                                    initializer = init,
+                                    trainable=True)
+
+        else:
+            self.a = self.add_weight(shape=(1, input_shape[-1], self.D),   
                                  initializer= 'random_normal', 
                                  trainable=True) 
         
@@ -90,4 +126,3 @@ class Kaf(Layer):
         
         inputs = tf.expand_dims(inputs, -1)
         return kafActivation(inputs, self.a, self.d, self.k_bandw) 
-                 
