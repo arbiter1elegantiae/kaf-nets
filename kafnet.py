@@ -103,22 +103,24 @@ class Kaf(Layer):
             a_init = x * tf.ones(shape=(1, input_shape[-1], self.D)) # reshape x
             init = tf.constant_initializer(a_init.numpy()) # create an initializer from 'x'
            
-            self.a = self.add_weight(shape=(1, input_shape[-1], self.D),
-                                    initializer = init,
-                                    trainable=True)
+            self.a = tf.Variable(initial_value=a_init, trainable=True, name = 'mix_coeffs')
+                         #self.add_weight(shape=(1, input_shape[-1], self.D),
+                     #               initializer = init,
+                     #               trainable=True)
 
         else:
-            self.a = self.add_weight(shape=(1, input_shape[-1], self.D),   
+            self.a = self.add_weight(shape=(1, input_shape[-1], self.D),
+                                 name = 'mix_coeffs',   
                                  initializer= 'random_normal', 
                                  trainable=True) 
         
         # Adjust dimensions in order to exploit broadcasting and compute the entire batch all at once
         if not self.conv:
-            self.d = tf.reshape(self.d, shape=(1, 1, self.D))
+            self.d = tf.Variable(tf.reshape(self.d, shape=(1, 1, self.D)), name='dictionary', trainable=False)
         
         else:
-            self.a = tf.reshape(self.a, shape=(1,1,1,-1,self.D))
-            self.d = tf.reshape(self.d, shape=(1, 1, 1, 1, self.D))
+            self.a = tf.Variable(tf.reshape(self.a, shape=(1,1,1,-1,self.D)), name = 'mix_coeffs')
+            self.d = tf.Variable(tf.reshape(self.d, shape=(1, 1, 1, 1, self.D)), name='dictionary', trainable=False)
             
 
    
