@@ -8,7 +8,7 @@ def dictionaryGen(D):
         - D integers on the x axis evenly distributed around 0
         - The step size Δx """
 
-    d_pos = np.linspace(-10, 10, num= D, retstep=True, dtype=np.float32)
+    d_pos = np.linspace(-3, 3, num= D, retstep=True, dtype=np.float32)
     return (d_pos[1], d_pos[0])
 
 
@@ -121,9 +121,23 @@ class Kaf(Layer):
         else:
             self.a = tf.Variable(tf.reshape(self.a, shape=(1,1,1,-1,self.D)), name = 'mix_coeffs')
             self.d = tf.Variable(tf.reshape(self.d, shape=(1, 1, 1, 1, self.D)), name='dictionary', trainable=False)
-            
 
+
+    def get_config(self): # override get_config to allow Kaf to be stored
+    
+        config = super().get_config().copy()
+        
+        config.update({
+            'dict_size' = self.D,
+            'conv_flag' = self.conv,
+            'ridge_flag' = self.ridge, 
+            'dictionary' = self.d,        
+            'kernel_bwidth' = self.k_bandw,        
+            'mix_coeffs': self.a
+        })
+        return config
    
+
     def call(self, inputs):
         
         inputs = tf.expand_dims(inputs, -1)
