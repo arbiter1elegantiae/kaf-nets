@@ -126,17 +126,14 @@ class Kaf(Layer):
     def get_config(self): # override get_config to allow Kaf to be stored
     
         config = super().get_config().copy()
-        
         config.update({
-            'dict_size' = self.D,
-            'conv_flag' = self.conv,
-            'ridge_flag' = self.ridge, 
-            'dictionary' = self.d,        
-            'kernel_bwidth' = self.k_bandw,        
-            'mix_coeffs': self.a
-        })
+            'dict_size' : self.D,
+            'conv_flag' : self.conv,
+            'ridge_flag' : self.ridge, 
+            'dictionary' : self.d,        
+            'kernel_bwidth' : self.k_bandw,        
+            'mix_coeffs' : self.a  })
         return config
-   
 
     def call(self, inputs):
         
