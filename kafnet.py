@@ -16,8 +16,8 @@ def dictionaryGen(D):
     Returns
     -------
     tuple    
-        np array of D integers evenly distributed around 0,
-        the step size \gamma 
+    (the step size \gamma, np array of D integers evenly distributed around 0)
+         
     """
     d_pos = np.linspace(-3, 3, num= D, retstep=True, dtype=np.float32)
     return (d_pos[1], d_pos[0])
@@ -129,8 +129,8 @@ class Kaf(Layer):
 
             K = kernelMatrix(self.d, self.k_bandw)
             
-            x = tf.reshape(np.linalg.solve(K + eps*tf.eye(self.D), t), shape=(1, 1, -1)) # solve ridge regression and get 'a' coeffs
-            a_init = x * tf.ones(shape=(1, input_shape[-1], self.D)) # reshape x
+            a = tf.reshape(np.linalg.solve(K + eps*tf.eye(self.D), t), shape=(1, 1, -1)) # solve ridge regression and get 'a' coeffs
+            a_init = a * tf.ones(shape=(1, input_shape[-1], self.D)) # reshape a
            
             self.a = tf.Variable(initial_value=a_init, trainable=True, name = 'mix_coeffs')
 
