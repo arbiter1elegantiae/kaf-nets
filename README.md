@@ -20,4 +20,4 @@ Furthermore, perhaps more importantly, accuracy of neural networks which make us
 
 KAF performances are first evaluated in the context of *Feed-forward neural networks* using as a benchmark the [SUSY](https://arxiv.org/abs/1402.4735) dataset and then, similarly, for *Convolutional neural networks* using the CIFAR-10 dataset.
 
-Theory, experiments and results are commented summarized in the relative notebooks.
+Theory, experiments and results are commented more in-depth in the relative notebooks.
